@@ -1,0 +1,25 @@
+# 番茄自动发布隔离目录
+uploaded/
+chapters/
+images/
+docx/
+
+# 账号敏感登录凭据 (极其重要，绝对不可上传！)
+state.json
+
+# Python 及环境相关
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+Pipfile.lock
+
+# IDE / 系统相关
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
