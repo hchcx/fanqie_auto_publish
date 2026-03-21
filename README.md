@@ -56,4 +56,18 @@ python publish.py
 
 ---
 
+## 交流与支持 💬
+
+如果在自动化发文途中遇到了平台规则更新或环境报错，亦或者想要交流 AI 写小说的最新干货技巧，欢迎加入我们的**专属讨论阵地**：
+👉 **[点击链接加入群聊【AI交流群】](https://qm.qq.com/q/YBb6naAOcM)**
+
+如果这个超神自动化工具真正帮您解放了双手，帮您顺利度过了新手期并拿到了全勤和首秀打赏，欢迎请作者喝一杯防猝死的冰美式！您的所有充电和支持，都是本脚本持续对抗番茄防线更新的最强核动力！☕️🔋
+
+<div align="center">
+  <img src="https://anta.obs.cn-south-1.myhuaweicloud.com/IMG_0897.JPG" width="250" height="auto" style="margin-right: 20px" alt="微信赞赏码">
+  <img src="https://anta.obs.cn-south-1.myhuaweicloud.com/IMG_0896.JPG" width="250" height="auto" alt="其它打赏码">
+</div>
+
+---
+
 **⚠️ 免责声明**：本脚本纯属技术交流与自动化接口研究。因平台规则随时可能更新，请时刻留意 UI 变动。不要用作恶意批量发布垃圾内容。
