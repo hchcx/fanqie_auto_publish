@@ -145,18 +145,57 @@ def main():
                 page.goto(BOOK_MANAGE_URL, timeout=60000)
                 page.wait_for_timeout(3000) # 等待列表刷出来
                 
-                # 寻找特定小说的“章节管理”入口（为了防错，必须先判断章节存不存在）
-                print(f" -> 寻找【{book_name_filter}】对应的【章节管理】进入，开启防中断重启检测...")
+                # 寻找特定小说的"章节管理"入口
+                # 【关键】番茄工作台在有多部作品时，"章节管理"按钮默认隐藏，
+                # 只有鼠标悬停到对应小说卡片上时才会浮现，因此必须先 hover 再点击。
+                print(f" -> 寻找【{book_name_filter}】对应的小说卡片，准备悬停触发【章节管理】按钮...")
                 
-                book_container = page.locator('div, li, section').filter(has_text=book_name_filter).filter(has=page.locator('text="章节管理"')).last
+                manage_clicked = False
                 
-                # 点击进入章节管理
-                if book_container.is_visible():
-                    # 番茄的章节管理通常是没有 button 标签的 a / span / div
-                    manage_btn = book_container.get_by_text("章节管理").first
-                    manage_btn.click()
-                else:
-                    print("    [警告] 找不到目标小说的【章节管理】，退化瞎找第一个...")
+                # 策略1：找到包含书名文本的卡片容器，hover 后等待"章节管理"出现
+                book_cards = page.locator('div, li, section, article').filter(has_text=book_name_filter)
+                card_count = book_cards.count()
+                
+                for i in range(card_count - 1, -1, -1):  # 从后往前试（.last 优先）
+                    card = book_cards.nth(i)
+                    try:
+                        if not card.is_visible():
+                            continue
+                        # 悬停到小说卡片上，触发 hover 效果
+                        card.hover(timeout=3000)
+                        page.wait_for_timeout(1000)  # 等待 hover 动画/按钮浮现
+                        
+                        # 尝试在该卡片内或全局找到"章节管理"
+                        manage_btn = card.get_by_text("章节管理").first
+                        if manage_btn.is_visible():
+                            manage_btn.click()
+                            manage_clicked = True
+                            break
+                    except Exception:
+                        continue
+                
+                # 策略2：如果卡片 hover 方式没成功，尝试全局查找
+                if not manage_clicked:
+                    print("    [备选] 卡片hover未触发按钮，尝试全局查找【章节管理】...")
+                    # 先尝试 hover 所有可见卡片触发全局悬浮
+                    all_cards = page.locator('[class*="book"], [class*="card"], [class*="item"]').filter(has_text=book_name_filter)
+                    for i in range(all_cards.count()):
+                        try:
+                            c = all_cards.nth(i)
+                            if c.is_visible():
+                                c.hover(timeout=2000)
+                                page.wait_for_timeout(800)
+                                gb = page.get_by_text("章节管理").first
+                                if gb.is_visible():
+                                    gb.click()
+                                    manage_clicked = True
+                                    break
+                        except Exception:
+                            continue
+                
+                # 策略3：终极兜底
+                if not manage_clicked:
+                    print("    [警告] 所有 hover 策略失败，退化为直接点击第一个可见的【章节管理】...")
                     page.get_by_text("章节管理").first.click()
                 
                 page.wait_for_timeout(4000) # 等待各种表格和翻页动画加载
