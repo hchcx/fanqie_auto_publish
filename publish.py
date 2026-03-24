@@ -64,8 +64,38 @@ def main():
         return
     
     book_name_filter, book_chapter_dir, txt_files = book_dirs[choice_idx]
+    total_chapters = len(txt_files)
     
-    print(f"\n已选择：【{book_name_filter}】，共 {len(txt_files)} 章待发")
+    print(f"\n已选择：【{book_name_filter}】，共 {total_chapters} 章待发")
+    print(f"==================================================")
+    
+    # ============ 发布章节数量选择 ============
+    publish_count_input = input(
+        f"\n>>> 请输入本次要发布的章节数量（1-{total_chapters}），直接回车则发布全部："
+    ).strip()
+    
+    if publish_count_input == "":
+        publish_count = total_chapters
+        print(f"    -> 将发布全部 {publish_count} 章")
+    else:
+        try:
+            publish_count = int(publish_count_input)
+            if publish_count <= 0:
+                print("    [错误] 数量必须大于 0，退出。")
+                return
+            if publish_count > total_chapters:
+                print(f"    [提示] 输入数量 {publish_count} 大于待发总数 {total_chapters}，将发布全部章节。")
+                publish_count = total_chapters
+            else:
+                print(f"    -> 将发布前 {publish_count} 章")
+        except ValueError:
+            print("    [错误] 请输入有效的数字，退出。")
+            return
+    
+    # 截取要发布的章节列表
+    txt_files = txt_files[:publish_count]
+    
+    print(f"\n本次发布计划：【{book_name_filter}】× {len(txt_files)} 章")
     print(f"==================================================\n")
     
     current_uploaded_dir = os.path.join(UPLOADED_DIR, book_name_filter)
