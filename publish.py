@@ -98,8 +98,30 @@ def main():
     print(f"\n本次发布计划：【{book_name_filter}】× {len(txt_files)} 章")
     print(f"==================================================\n")
     
+    # ============ 卷号选择（决定发布后文件归档到哪个卷目录） ============
+    volume_input = input(
+        ">>> 请输入本次发布的章节属于第几卷（如 1、2、3），直接回车默认第一卷："
+    ).strip()
+    
+    if volume_input == "":
+        volume_num = 1
+    else:
+        try:
+            volume_num = int(volume_input)
+            if volume_num <= 0:
+                print("    [错误] 卷号必须大于 0，退出。")
+                return
+        except ValueError:
+            print("    [错误] 请输入有效的数字，退出。")
+            return
+    
+    cn_digits = "一二三四五六七八九十"
+    volume_name = f"第{cn_digits[volume_num - 1] if volume_num <= 10 else str(volume_num)}卷"
+    print(f"    -> 发布成功后文件将归档至：uploaded/{book_name_filter}/{volume_name}/\n")
+    
     current_uploaded_dir = os.path.join(UPLOADED_DIR, book_name_filter)
-    os.makedirs(current_uploaded_dir, exist_ok=True)
+    volume_dir = os.path.join(current_uploaded_dir, volume_name)
+    os.makedirs(volume_dir, exist_ok=True)
     
     print("\n>>> 准备启动浏览器大魔王...")
     
@@ -370,7 +392,7 @@ def main():
                 page.wait_for_timeout(3000) # 等待对号保存成功消失的动画
                 
                 # 按照小说书名绝对隔离分类进入对应的文件夹，干净利落绝不污染！
-                dest_path = os.path.join(current_uploaded_dir, filename)
+                dest_path = os.path.join(volume_dir, filename)
                 shutil.move(file_path, dest_path)
                 
                 # 清除开启的新页面，保证一直是一个极简的单线操作！
