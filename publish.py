@@ -17,25 +17,57 @@ def main():
         print(f"找不到登录状态文件 {STATE_FILE}，请先运行 py login.py 进行登录！")
         return
     
-    txt_files = glob.glob(os.path.join(CHAPTERS_DIR, "*.txt"))
-    if not txt_files:
-        print(f"[{CHAPTERS_DIR}] 文件夹中没有找到任何待发的热气腾腾的 txt 章节！")
+    # ============ 多部小说子目录管理 ============
+    # 扫描 chapters/ 下所有子目录，每个子目录对应一本书
+    # 同时兼容旧模式：如果 chapters/ 根目录有散落的 txt 文件，提示用户归类
+    root_txt_files = glob.glob(os.path.join(CHAPTERS_DIR, "*.txt"))
+    if root_txt_files:
+        print(f"\n[提示] 发现 chapters/ 根目录下有 {len(root_txt_files)} 个散落的 txt 文件。")
+        print(f"       多部小说管理模式要求章节放在子目录中，例如：")
+        print(f"         chapters/ai编程末日/101 第101章.txt")
+        print(f"         chapters/青冥独行录/001 第1章.txt")
+        print(f"       请先将这些文件移入对应的书名子目录后再运行脚本。\n")
         return
     
-    txt_files.sort()
+    # 扫描子目录
+    book_dirs = []
+    if os.path.isdir(CHAPTERS_DIR):
+        for name in sorted(os.listdir(CHAPTERS_DIR)):
+            sub_path = os.path.join(CHAPTERS_DIR, name)
+            if os.path.isdir(sub_path):
+                txts = glob.glob(os.path.join(sub_path, "*.txt"))
+                if txts:
+                    book_dirs.append((name, sub_path, sorted(txts)))
+    
+    if not book_dirs:
+        print(f"\n[{CHAPTERS_DIR}] 中没有找到任何待发章节！")
+        print(f"请在 chapters/ 下按书名创建子目录并放入 txt 章节文件，例如：")
+        print(f"  chapters/ai编程末日/101 第101章.txt")
+        print(f"  chapters/青冥独行录/001 第1章.txt\n")
+        return
     
     print(f"\n==================================================")
-    print(f"即将开始【全自动】发文！")
-    print(f"检测到您可能有【多部小说】，本脚本将开启隔离管理与智能识别！")
-    print(f"检测到待发存稿章节数量: {len(txt_files)}")
+    print(f"即将开始【全自动】发文！多部小说隔离管理模式已启动！")
+    print(f"==================================================")
+    print(f"\n检测到以下小说有待发章节：\n")
+    for idx, (name, _, txts) in enumerate(book_dirs, 1):
+        print(f"  [{idx}] {name}  （{len(txts)} 章待发）")
+    print()
+    
+    choice = input(">>> 请输入序号选择要发布的小说：").strip()
+    try:
+        choice_idx = int(choice) - 1
+        if choice_idx < 0 or choice_idx >= len(book_dirs):
+            raise ValueError
+    except ValueError:
+        print("    [错误] 无效的序号，退出。")
+        return
+    
+    book_name_filter, book_chapter_dir, txt_files = book_dirs[choice_idx]
+    
+    print(f"\n已选择：【{book_name_filter}】，共 {len(txt_files)} 章待发")
     print(f"==================================================\n")
     
-    # 支持多部小说：要求用户输入目前发的是哪本，以便管理本地归档和自动寻找网页按钮
-    book_name_filter = input(">>> 请输入当前这批草稿属于哪部小说（全名或部分字眼即可）：\n>>> 这将用于精准点击后台，并给本地的已发文件分类归档：").strip()
-    if not book_name_filter:
-        print("    [警告] 由于您没有输入书名，默认建档为【未命名小说】！")
-        book_name_filter = "未命名小说"
-        
     current_uploaded_dir = os.path.join(UPLOADED_DIR, book_name_filter)
     os.makedirs(current_uploaded_dir, exist_ok=True)
     
