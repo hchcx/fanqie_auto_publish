@@ -284,6 +284,53 @@ def main():
                     if not clicked_guide:
                         break # 如果这一轮地毯式搜索没点任何非顶部按钮，代表弹窗彻底清扫干净了！
                     
+                # 1.5 确认或切换分卷
+                if volume_num > 1:
+                    print(f" -> 开始确认/切换分卷，目标：【{volume_name}】...")
+                    try:
+                        # 尝试点击左上角的分卷下拉菜单。找到页面前几个带有“第X卷”的文本元素，逐一点击直到弹出含“新建分卷”的分卷弹窗
+                        vol_elements = editor_page.get_by_text(re.compile(r'第[一二三四五六七八九十百]+卷')).element_handles()
+                        dialog_opened = False
+                        for v in vol_elements[:5]:
+                            try:
+                                v.click(force=True)
+                                editor_page.wait_for_timeout(800)
+                                if editor_page.get_by_text("新建分卷").is_visible() or editor_page.get_by_text("取消").is_visible():
+                                    dialog_opened = True
+                                    break
+                            except Exception:
+                                pass
+                        
+                        if dialog_opened:
+                            # 兼容番茄可能出现的多种卷号文字格式：第二卷, 第2卷 等
+                            target_vol = None
+                            for v_name in [volume_name, f"第{volume_num}卷", f"卷{volume_num}"]:
+                                temp_vol = editor_page.get_by_text(v_name, exact=False).first
+                                if temp_vol.is_visible():
+                                    target_vol = temp_vol
+                                    break
+                                    
+                            if target_vol and target_vol.is_visible():
+                                target_vol.click(force=True)
+                                editor_page.wait_for_timeout(500)
+                                
+                                confirm_btn = editor_page.get_by_role("button", name="确定").first
+                                if not confirm_btn.is_visible():
+                                    confirm_btn = editor_page.get_by_text("确定", exact=True).last
+                                
+                                if confirm_btn.is_visible():
+                                    confirm_btn.click(force=True)
+                                    print(f"    - 已成功确认/切换到分卷：{volume_name}")
+                                editor_page.wait_for_timeout(1000)
+                            else:
+                                print(f"    [警告] 分卷弹窗中未找到包含 {volume_name} 的选项！")
+                                print("    脚本正在等待，请您手动在浏览器中点击目标卷并确定！(等待20秒...)")
+                                editor_page.wait_for_timeout(20000)
+                        else:
+                            print("    [警告] 未能成功呼出分卷弹窗。")
+                    except Exception as e:
+                        print(f"    [警告] 自动选择分卷异常：{e}")
+
                 # 2. 填写章节序号和标题
                 print(" -> 分别填入左边的【章节序号】和右边的【主标题】...")
                 
