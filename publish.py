@@ -413,11 +413,11 @@ def main():
                         publish_btn.wait_for(state="visible", timeout=6000)
                         
                         try:
-                            # 必须精确点击那个标示“是”的单选按钮文本，拒绝匹配“是否使用AI”
-                            print("    - 遵守平台最高发文铁律：强制勾选【是否使用AI：是】的单选项...")
-                            ai_yes_label = editor_page.get_by_text("是", exact=True).first
-                            ai_yes_label.wait_for(state="visible", timeout=2000)
-                            ai_yes_label.click(force=True)
+                            # 这个选项被用户要求改为否
+                            print("    - 响应号召：强制勾选【是否使用AI：否】的单选项...")
+                            ai_no_label = editor_page.get_by_text("否", exact=True).first
+                            ai_no_label.wait_for(state="visible", timeout=2000)
+                            ai_no_label.click(force=True)
                             editor_page.wait_for_timeout(500)
                         except Exception:
                             # 并不是所有账号、所有分区都强制带这个选项，带不上也不要紧
