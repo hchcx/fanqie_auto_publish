@@ -99,28 +99,34 @@ def main():
     print(f"==================================================\n")
     
     # ============ 卷号选择（决定发布后文件归档到哪个卷目录） ============
+    # 直接回车 = 不执行分卷切换（番茄平台会保持上次选择的分卷）
+    # 输入具体卷号 = 在浏览器中主动切换到对应分卷
     volume_input = input(
-        ">>> 请输入本次发布的章节属于第几卷（如 1、2、3），直接回车默认第一卷："
+        ">>> 请输入本次发布的章节属于第几卷（如 2、3），直接回车则不执行切换分卷操作："
     ).strip()
     
-    if volume_input == "":
-        volume_num = 1
-    else:
+    volume_num = None  # None 表示不切换分卷
+    volume_name = None
+    
+    if volume_input != "":
         try:
             volume_num = int(volume_input)
             if volume_num <= 0:
                 print("    [错误] 卷号必须大于 0，退出。")
                 return
+            cn_digits = "一二三四五六七八九十"
+            volume_name = f"第{cn_digits[volume_num - 1] if volume_num <= 10 else str(volume_num)}卷"
         except ValueError:
             print("    [错误] 请输入有效的数字，退出。")
             return
     
-    cn_digits = "一二三四五六七八九十"
-    volume_name = f"第{cn_digits[volume_num - 1] if volume_num <= 10 else str(volume_num)}卷"
-    print(f"    -> 发布成功后文件将归档至：uploaded/{book_name_filter}/{volume_name}/\n")
-    
     current_uploaded_dir = os.path.join(UPLOADED_DIR, book_name_filter)
-    volume_dir = os.path.join(current_uploaded_dir, volume_name)
+    if volume_name:
+        volume_dir = os.path.join(current_uploaded_dir, volume_name)
+        print(f"    -> 将切换至【{volume_name}】，发布成功后文件归档至：uploaded/{book_name_filter}/{volume_name}/\n")
+    else:
+        volume_dir = current_uploaded_dir
+        print(f"    -> 不切换分卷（保持番茄平台当前默认），文件归档至：uploaded/{book_name_filter}/\n")
     os.makedirs(volume_dir, exist_ok=True)
     
     print("\n>>> 准备启动浏览器大魔王...")
@@ -285,7 +291,7 @@ def main():
                         break # 如果这一轮地毯式搜索没点任何非顶部按钮，代表弹窗彻底清扫干净了！
                     
                 # 1.5 确认或切换分卷
-                if volume_num > 1:
+                if volume_num is not None and volume_num > 1:
                     print(f" -> 开始确认/切换分卷，目标：【{volume_name}】...")
                     try:
                         # 尝试点击左上角的分卷下拉菜单。找到页面前几个带有“第X卷”的文本元素，逐一点击直到弹出含“新建分卷”的分卷弹窗
