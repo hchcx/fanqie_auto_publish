@@ -243,15 +243,15 @@ def main():
                     # 番茄的编辑图标通常在最后一列，是个 icon 或者 link
                     edit_icon = draft_row.locator('td').last.locator('svg, i, a, span, button, img').first
                     if edit_icon.is_visible():
-                        edit_icon.click()
+                        edit_icon.click(force=True)
                     else:
-                        draft_row.click() # 降级盲点整行防呆
+                        draft_row.click(force=True) # 降级盲点整行防呆
                 else:
                     print(" -> 确认为全新章节，点击右上角桔红色【新建章节】...")
                     new_btn = editor_page.get_by_role("button", name="新建章节").first
                     if not new_btn.is_visible():
                         new_btn = editor_page.get_by_text("新建章节").first
-                    new_btn.click()
+                    new_btn.click(force=True)
                 
                 page.wait_for_timeout(4000)
                 
@@ -394,15 +394,26 @@ def main():
                         submit_typo_btn.wait_for(state="visible", timeout=2000)
                         print("    - 触发错别字修改提示弹窗，直接无视并强制选择【提交】...")
                         submit_typo_btn.click(force=True)
+                        # 【重要修复】：等待错别字弹窗的消失动画彻底走完，防它的“取消”按钮干扰下一关
+                        editor_page.wait_for_timeout(1200)
                     except Exception:
                         pass
                         
                     try:
                         # 闯关拦截 2：内容风险检测弹窗 -> 必须秒破
-                        confirm_risk_btn = editor_page.get_by_role("button", name="确定").first
-                        confirm_risk_btn.wait_for(state="visible", timeout=2000)
-                        print("    - 触发作者内容风险检测弹窗，强制选择同意【确定】...")
-                        confirm_risk_btn.click(force=True)
+                        # 严格先探明存在此风险询问文案
+                        risk_txt = editor_page.get_by_text("内容风险检测", exact=False).last
+                        risk_txt.wait_for(state="visible", timeout=2000)
+                        
+                        editor_page.wait_for_timeout(500) # 等待弹窗进入视野
+                        
+                        cancel_risk_btn = editor_page.get_by_role("button", name="取消").last
+                        cancel_risk_btn.wait_for(state="visible", timeout=2000)
+                        print("    - 触发内容风险检测弹窗，为了不浪费检测次数，点击【取消】...")
+                        cancel_risk_btn.click(force=True)
+                        
+                        # 等待该弹窗退场，以免截留后续的发布点击
+                        editor_page.wait_for_timeout(1000)
                     except Exception:
                         pass
                         
