@@ -294,13 +294,25 @@ def main():
                 if volume_num is not None and volume_num > 1:
                     print(f" -> 开始确认/切换分卷，目标：【{volume_name}】...")
                     try:
-                        # 尝试点击左上角的分卷下拉菜单。找到页面前几个带有“第X卷”的文本元素，逐一点击直到弹出含“新建分卷”的分卷弹窗
+                        # 策略：点击左上角的分卷区域触发弹窗，但要避免误点到左侧大纲的占位符
+                        # 只查找可视区域内、不在 outline-placeholder 内的卷号元素
                         vol_elements = editor_page.get_by_text(re.compile(r'第[一二三四五六七八九十百]+卷')).element_handles()
                         dialog_opened = False
-                        for v in vol_elements[:5]:
+                        for v in vol_elements[:8]:
                             try:
+                                box = v.bounding_box()
+                                if not box:
+                                    continue
+                                # 排除不在可视区域内的元素（y < 0 或 y > 800）
+                                if box['y'] < 0 or box['y'] > 800:
+                                    continue
+                                # 排除左侧大纲占位符（通常包含 "卷名" 文字或 class 含 outline/placeholder）
+                                outer_html = v.evaluate("el => el.outerHTML") or ""
+                                if "outline" in outer_html.lower() or "placeholder" in outer_html.lower() or "卷名" in outer_html:
+                                    continue
                                 v.click(force=True)
-                                editor_page.wait_for_timeout(800)
+                                editor_page.wait_for_timeout(1000)
+                                # 检测弹窗是否出现（弹窗通常含 "新建分卷" 或 "取消" 按钮）
                                 if editor_page.get_by_text("新建分卷").is_visible() or editor_page.get_by_text("取消").is_visible():
                                     dialog_opened = True
                                     break
@@ -308,18 +320,37 @@ def main():
                                 pass
                         
                         if dialog_opened:
-                            # 兼容番茄可能出现的多种卷号文字格式：第二卷, 第2卷 等
+                            editor_page.wait_for_timeout(500)
+                            # 在弹窗/对话框容器内精确查找目标分卷选项
+                            # 排除大纲占位符中的同名文本
                             target_vol = None
                             for v_name in [volume_name, f"第{volume_num}卷", f"卷{volume_num}"]:
-                                temp_vol = editor_page.get_by_text(v_name, exact=False).first
-                                if temp_vol.is_visible():
-                                    target_vol = temp_vol
+                                candidates = editor_page.get_by_text(v_name, exact=False).element_handles()
+                                for cand in candidates:
+                                    try:
+                                        cand_box = cand.bounding_box()
+                                        if not cand_box:
+                                            continue
+                                        # 弹窗通常在屏幕中央偏上，排除明显不在弹窗区域的元素
+                                        cand_html = cand.evaluate("el => el.outerHTML") or ""
+                                        # 排除大纲占位符
+                                        if "outline" in cand_html.lower() or "placeholder" in cand_html.lower() or "卷名" in cand_html:
+                                            continue
+                                        # 排除不在视口内的
+                                        if cand_box['y'] < 0 or cand_box['y'] > 800:
+                                            continue
+                                        target_vol = cand
+                                        break
+                                    except Exception:
+                                        continue
+                                if target_vol:
                                     break
                                     
-                            if target_vol and target_vol.is_visible():
+                            if target_vol:
                                 target_vol.click(force=True)
                                 editor_page.wait_for_timeout(500)
                                 
+                                # 点击确定按钮关闭弹窗
                                 confirm_btn = editor_page.get_by_role("button", name="确定").first
                                 if not confirm_btn.is_visible():
                                     confirm_btn = editor_page.get_by_text("确定", exact=True).last
@@ -327,6 +358,10 @@ def main():
                                 if confirm_btn.is_visible():
                                     confirm_btn.click(force=True)
                                     print(f"    - 已成功确认/切换到分卷：{volume_name}")
+                                else:
+                                    # 确定按钮找不到，用 Escape 兜底关闭弹窗
+                                    editor_page.keyboard.press("Escape")
+                                    print(f"    [警告] 未找到确定按钮，已用 Escape 关闭弹窗")
                                 editor_page.wait_for_timeout(1000)
                             else:
                                 print(f"    [警告] 分卷弹窗中未找到包含 {volume_name} 的选项！")
@@ -334,8 +369,24 @@ def main():
                                 editor_page.wait_for_timeout(20000)
                         else:
                             print("    [警告] 未能成功呼出分卷弹窗。")
+                        
+                        # 兜底：确保弹窗已关闭，防止遮挡后续编辑器操作
+                        editor_page.wait_for_timeout(500)
+                        # 如果弹窗仍然存在（取消按钮可见），强制关闭
+                        try:
+                            if editor_page.get_by_text("取消").first.is_visible():
+                                editor_page.keyboard.press("Escape")
+                                editor_page.wait_for_timeout(500)
+                        except Exception:
+                            pass
                     except Exception as e:
                         print(f"    [警告] 自动选择分卷异常：{e}")
+                        # 异常时也要确保弹窗关闭
+                        try:
+                            editor_page.keyboard.press("Escape")
+                            editor_page.wait_for_timeout(500)
+                        except Exception:
+                            pass
 
                 # 2. 填写章节序号和标题
                 print(" -> 分别填入左边的【章节序号】和右边的【主标题】...")
