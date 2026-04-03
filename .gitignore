@@ -6,6 +6,7 @@ docx/
 
 # 账号敏感登录凭据 (极其重要，绝对不可上传！)
 state.json
+config.json
 
 # Python 及环境相关
 __pycache__/
@@ -23,3 +24,8 @@ Pipfile.lock
 .idea/
 .DS_Store
 Thumbs.db
+
+# 打包构建相关
+build/
+dist/
+*.spec

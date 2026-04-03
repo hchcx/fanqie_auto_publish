@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>番茄全自动发文大魔王</title>
+    <!-- Tailwind CSS (Local for instant load) -->
+    <script src="tailwind.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              accent: {
+                50: 'rgb(var(--accent-50) / <alpha-value>)',
+                100: 'rgb(var(--accent-100) / <alpha-value>)',
+                400: 'rgb(var(--accent-400) / <alpha-value>)',
+                500: 'rgb(var(--accent-500) / <alpha-value>)',
+                600: 'rgb(var(--accent-600) / <alpha-value>)',
+                700: 'rgb(var(--accent-700) / <alpha-value>)'
+              }
+            }
+          }
+        }
+      }
+      function setThemeColor(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('theme', t);
+        
+        document.querySelectorAll('.theme-circle').forEach(el => {
+            el.classList.remove('border-accent-500', 'bg-accent-50');
+            el.classList.add('border-transparent', 'bg-transparent');
+            const check = el.querySelector('.theme-check');
+            if(check) check.classList.add('hidden');
+        });
+        const active = document.getElementById(`theme-circle-${t}`);
+        if(active) {
+            active.classList.remove('border-transparent', 'bg-transparent');
+            active.classList.add('border-accent-500', 'bg-accent-50');
+            const check = active.querySelector('.theme-check');
+            if(check) {
+                check.classList.remove('hidden');
+                check.classList.add('flex');
+            }
+        }
+      }
+      document.addEventListener('DOMContentLoaded', () => {
+         const savedTheme = localStorage.getItem('theme') || 'blue';
+         setThemeColor(savedTheme);
+      });
+      const st = localStorage.getItem('theme') || 'blue';
+      document.documentElement.setAttribute('data-theme', st);
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <style>
+      :root[data-theme="blue"] {
+         --accent-50: 239 246 255; --accent-100: 219 234 254; --accent-400: 96 165 250;
+         --accent-500: 59 130 246; --accent-600: 37 99 235; --accent-700: 29 78 216;
+      }
+      :root[data-theme="black"] {
+         --accent-50: 248 250 252; --accent-100: 241 245 249; --accent-400: 148 163 184;
+         --accent-500: 15 23 42; --accent-600: 2 6 23; --accent-700: 0 0 0;
+      }
+      :root[data-theme="emerald"] {
+         --accent-50: 236 253 245; --accent-100: 209 250 229; --accent-400: 52 211 153;
+         --accent-500: 16 185 129; --accent-600: 5 150 105; --accent-700: 4 120 87;
+      }
+      :root[data-theme="amber"] {
+         --accent-50: 255 251 235; --accent-100: 254 243 199; --accent-400: 251 191 36;
+         --accent-500: 245 158 11; --accent-600: 217 119 6; --accent-700: 180 83 9;
+      }
+      :root[data-theme="rose"] {
+         --accent-50: 255 241 242; --accent-100: 255 228 230; --accent-400: 251 113 133;
+         --accent-500: 244 63 94; --accent-600: 225 29 72; --accent-700: 190 18 60;
+      }
+      :root[data-theme="violet"] {
+         --accent-50: 245 243 255; --accent-100: 237 233 254; --accent-400: 167 139 250;
+         --accent-500: 139 92 246; --accent-600: 124 58 237; --accent-700: 109 40 217;
+      }
+
+      body { font-family: "Outfit", -apple-system, sans-serif; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+      .hidden-scrollbar::-webkit-scrollbar { display: none; }
+      .fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+      .titlebar { -webkit-app-region: drag; }
+      .no-drag { -webkit-app-region: no-drag; }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+      input[type="number"] { -moz-appearance: textfield; }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden relative selection:bg-accent-100 selection:text-accent-700 font-medium">
+    
+    <!-- Top System Titlebar mapped for drag -->
+    <div class="h-8 bg-white border-b border-slate-200 titlebar flex items-center justify-center shrink-0 w-full z-50 absolute top-0 left-0">
+        <div class="text-[11px] font-bold text-slate-400 flex items-center gap-2 uppercase tracking-widest"><i class="fa-solid fa-layer-group text-accent-500"></i> Fanqie Manager Pro</div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 p-3 shadow-sm flex justify-between items-center shrink-0 mt-8 relative gap-4 z-10 titlebar">
+      <!-- Title -->
+      <div class="flex items-center space-x-3 shrink-0 ml-2">
+        <div class="bg-gradient-to-br from-accent-600 to-accent-500 text-white rounded-xl p-2 shadow-md shadow-accent-500/30 transition-colors duration-500">
+          <i class="fa-solid fa-pen-nib text-lg px-0.5"></i>
+        </div>
+        <h1 class="text-[1.1rem] font-bold tracking-widest text-slate-800 relative top-[1px] whitespace-nowrap">
+          FANQIE<span class="text-[10px] text-accent-500 font-black ml-1.5 uppercase tracking-widest bg-accent-50 px-1.5 py-0.5 rounded border border-accent-200 transition-colors duration-500">Pro</span>
+        </h1>
+      </div>
+
+      <!-- Center Space -->
+      <div class="flex-1 flex flex-col max-w-[650px] items-center justify-center px-2 no-drag">
+          <div class="w-full flex items-center space-x-3">
+          <!-- Source -->
+          <div class="flex items-center flex-1 bg-slate-50 border border-slate-200 rounded-lg overflow-hidden h-9 shadow-inner transition-colors hover:border-slate-300 focus-within:border-accent-400 focus-within:ring-1 focus-within:ring-accent-400">
+              <button id="btn-open-source" title="打开草稿来源目录" aria-label="打开草稿来源目录" class="h-full bg-white hover:bg-slate-50 px-3 transition-colors border-r border-slate-200 text-slate-400 hover:text-accent-600 focus:outline-none shrink-0 group">
+                  <i class="fa-solid fa-folder-tree group-hover:text-accent-500 transition-colors duration-300"></i>
+              </button>
+              <input type="text" id="source-dir-input" readonly value="" placeholder="草稿来源目录（待发布TXT）" class="w-full h-full bg-transparent text-slate-600 placeholder-slate-400 font-semibold px-3 text-[11px] tracking-wide outline-none cursor-not-allowed pointer-events-none truncate transition-colors duration-300" />
+              <button id="btn-choose-source-dir" class="h-full bg-white hover:bg-slate-50 text-slate-600 hover:text-accent-600 px-4 transition-colors border-l border-slate-200 font-bold pointer-events-auto whitespace-nowrap focus:outline-none text-[11px] shrink-0 tracking-wider">选草稿目录</button>
+          </div>
+
+          <i class="fa-solid fa-arrow-right-long text-slate-300 text-[10px] shrink-0 mx-1"></i>
+
+          <!-- Archive -->
+          <div class="flex items-center flex-1 bg-slate-50 border border-slate-200 rounded-lg overflow-hidden h-9 shadow-inner transition-colors hover:border-slate-300 focus-within:border-accent-400 focus-within:ring-1 focus-within:ring-accent-400">
+              <button id="btn-open-data" title="打开发布归档目录" aria-label="打开发布归档目录" class="h-full bg-white hover:bg-slate-50 px-3 transition-colors border-r border-slate-200 text-slate-400 hover:text-accent-600 focus:outline-none shrink-0 group">
+                  <i class="fa-solid fa-box-archive group-hover:text-accent-500 transition-colors duration-300"></i>
+              </button>
+              <input type="text" id="archive-dir-input" readonly value="" placeholder="发布归档目录（已发布章节归档）" class="w-full h-full bg-transparent text-slate-600 placeholder-slate-400 font-semibold px-3 text-[11px] tracking-wide outline-none cursor-not-allowed pointer-events-none truncate transition-colors duration-300" />
+              <button id="btn-choose-dir" class="h-full bg-white hover:bg-slate-50 text-slate-600 hover:text-accent-600 px-4 transition-colors border-l border-slate-200 font-bold pointer-events-auto whitespace-nowrap focus:outline-none text-[11px] shrink-0 tracking-wider">选归档目录</button>
+          </div>
+          </div>
+          <p class="w-full mt-1 text-[10px] text-slate-400 font-semibold tracking-wide text-center">左侧为草稿来源目录，右侧为发布归档目录</p>
+      </div>
+
+      <!-- Right Actions -->
+      <div class="flex text-sm h-full items-center shrink-0 no-drag">
+        <button id="btn-open-theme" class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-accent-600 shadow-sm transition-all duration-300 px-3 py-1.5 rounded-lg text-[11px] flex items-center gap-1.5 font-bold mr-3">
+          <i class="fa-solid fa-palette text-accent-500 transition-colors"></i> 外观偏好
+        </button>
+        <button id="btn-login" class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-accent-600 shadow-sm transition-all duration-300 px-3 py-1.5 rounded-lg text-[11px] flex items-center gap-1.5 font-bold mr-3">
+          <i class="fa-solid fa-fingerprint shadow-sm"></i> 重置授权
+        </button>
+        <div id="status-badge" class="px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center gap-2 shadow-sm mr-2">
+          <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_3px_currentColor]"></div>
+          就绪
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <div class="flex-1 flex overflow-hidden p-6 gap-6 relative z-10 max-w-[1200px] mx-auto w-full">
+      <!-- Left Panel: Settings -->
+      <div class="w-1/3 min-w-[340px] bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex flex-col shrink-0 overflow-y-auto hidden-scrollbar">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <h2 class="text-[13px] font-bold tracking-widest text-slate-700 uppercase flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-accent-500 transition-colors duration-500"></i> 数据流与参数
+          </h2>
+        </div>
+
+        <div class="p-6 flex flex-col gap-6 flex-1">
+          <!-- Book Select -->
+          <div>
+            <div class="flex justify-between items-center mb-2.5">
+              <label class="block text-[12px] font-bold text-slate-600 tracking-wide">选择待发小说</label>
+              <div class="flex gap-2 shrink-0">
+                <button id="btn-example" class="text-[10px] text-amber-500 hover:text-amber-600 hover:bg-amber-50 px-2 py-1 rounded transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider">
+                  <i class="fa-solid fa-lightbulb"></i> 排版规范
+                </button>
+                <button id="btn-refresh" class="text-[10px] text-slate-500 hover:text-accent-600 hover:bg-slate-50 px-2 py-1 rounded transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider">
+                  <i class="fa-solid fa-rotate-right" id="refresh-icon"></i> 刷新列表
+                </button>
+              </div>
+            </div>
+            <div class="relative group" id="custom-select-container">
+              <button id="custom-select-trigger" class="w-full flex justify-between items-center bg-slate-50 border border-slate-200 focus:border-accent-500 focus:ring-1 text-slate-700 rounded-xl p-3 text-[13px] font-bold cursor-pointer transition-colors shadow-inner">
+                <span id="custom-select-text" class="truncate">正在载入环境...</span>
+                <i class="fa-solid fa-chevron-down text-slate-400 text-[10px] transition-transform duration-200" id="custom-select-arrow"></i>
+              </button>
+              
+              <!-- Custom Dropdown Menu -->
+              <div id="custom-select-dropdown" class="absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-slate-200 rounded-xl shadow-xl z-[60] hidden opacity-0 transition-opacity duration-200 max-h-56 overflow-y-auto hidden-scrollbar py-1.5 focus:outline-none">
+              </div>
+
+              <!-- Hidden native select for script compat -->
+              <select id="book-select" class="hidden">
+                <option value="">正在载入环境...</option>
+              </select>
+            </div>
+            <p id="book-status" class="mt-2 text-[11px] text-slate-400 tracking-wide font-['JetBrains_Mono',monospace] font-semibold"></p>
+          </div>
+
+          <!-- Publish Count -->
+          <div>
+            <p id="published-volume-status" class="mb-2 text-[11px] text-slate-500 font-semibold tracking-wide">已发布卷数：0 卷</p>
+            <label class="block text-[12px] font-bold text-slate-600 tracking-wide mb-2.5">发布章节数量</label>
+            <input type="number" id="publish-count" placeholder="留空则发布全部" class="block w-full bg-slate-50 border border-slate-200 focus:border-accent-500 focus:ring-1 focus:ring-accent-500 text-slate-700 text-[13px] font-bold rounded-xl p-3 shadow-inner transition-colors placeholder-slate-400" />
+          </div>
+
+          <!-- Volume Set -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-600 tracking-wide mb-2.5">指定目标归档分卷 (选填)</label>
+            <input type="number" id="volume-num" placeholder="例如: 2 (代表第二卷)" class="block w-full bg-slate-50 border border-slate-200 focus:border-accent-500 focus:ring-1 focus:ring-accent-500 text-slate-700 text-[13px] font-bold rounded-xl p-3 shadow-inner transition-colors placeholder-slate-400" />
+            <p class="mt-2 text-[11px] text-slate-400 font-semibold tracking-wide">不填则不切换，默认归纳到上一次使用的卷</p>
+          </div>
+
+          <div class="mt-auto pt-6 border-t border-slate-100 flex flex-col gap-3">
+            <button id="btn-start" class="w-full bg-accent-600 hover:bg-accent-700 text-white font-black tracking-widest py-4 px-4 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 transform active:scale-[0.98] shadow-lg shadow-accent-600/30 ring-1 ring-accent-500/50">
+              <i class="fa-solid fa-satellite-dish animate-pulse"></i> 启动全自动发文
+            </button>
+            <div id="progress-wrapper" class="hidden w-full bg-slate-100 rounded-full h-1.5 shadow-inner relative overflow-hidden">
+                <div id="progress-bar" class="bg-accent-500 h-1.5 rounded-full transition-all duration-500 ease-out w-0 shadow-[0_0_10px_rgba(var(--accent-500),0.8)]"></div>
+            </div>
+            <p id="progress-text" class="hidden text-[11px] text-right text-slate-400 font-['JetBrains_Mono',monospace] font-bold tracking-widest mt-1">0/0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Logs -->
+      <div class="flex-1 bg-[#0f172a] rounded-3xl border border-[#1e293b] shadow-2xl flex flex-col overflow-hidden relative group">
+        <div class="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-black/40 to-transparent pointer-events-none z-10"></div>
+
+        <div class="flex justify-between items-center px-6 py-4 bg-[#1e293b]/50 border-b border-[#334155]/50 z-10 shrink-0">
+          <span class="text-[10px] font-bold tracking-widest text-[#94a3b8] uppercase flex items-center gap-2">
+            <div class="flex gap-1.5 mr-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+            </div>
+            运行日志控制台
+          </span>
+          <button id="btn-clear" class="text-[10px] text-[#64748b] hover:text-white transition-colors uppercase tracking-wider font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-eraser"></i> 清空
+          </button>
+        </div>
+
+        <div id="log-container" class="flex-1 p-6 font-['JetBrains_Mono',monospace] text-[13px] overflow-y-auto text-[#cbd5e1] leading-relaxed whitespace-pre-wrap select-text custom-scroll">
+          <div class="text-[#64748b] fade-in font-semibold">> 系统终端就绪，等待执行。</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Theme Palette Settings Modal (Light Theme) -->
+    <div id="theme-modal-backdrop" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[70] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 no-drag">
+      <div id="theme-modal-box" class="bg-white border border-slate-200 shadow-2xl rounded-2xl w-full max-w-2xl p-8 transform scale-95 transition-transform duration-300">
+        
+        <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-8">
+            <h3 class="text-base font-extrabold tracking-wider text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-palette text-accent-500 transition-colors duration-300"></i> 系统外观定制
+            </h3>
+            <button id="theme-modal-close" class="text-slate-400 hover:text-slate-800 transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-y-10 gap-x-6 px-4">
+            <!-- Theme Items -->
+            <div class="flex flex-col items-center gap-3 cursor-pointer group" onclick="setThemeColor('blue')">
+               <div id="theme-circle-blue" class="theme-circle w-14 h-14 rounded-2xl bg-transparent border-2 border-transparent flex items-center justify-center relative transition-all duration-300 hover:bg-blue-50">
+                 <div class="theme-check hidden absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 w-4 h-4 bg-accent-500 rounded-full items-center justify-center text-white text-[9px] border-2 border-white shadow-sm"><i class="fa-solid fa-check"></i></div>
+                 <div class="w-7 h-7 rounded-full bg-blue-600 shadow-md group-hover:scale-110 transition-transform"></div>
+               </div>
+               <span class="text-xs font-bold text-slate-700">企业蓝</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-3 cursor-pointer group" onclick="setThemeColor('black')">
+               <div id="theme-circle-black" class="theme-circle w-14 h-14 rounded-2xl bg-transparent border-2 border-transparent flex items-center justify-center relative transition-all duration-300 hover:bg-slate-100">
+                 <div class="theme-check hidden absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 w-4 h-4 bg-accent-500 rounded-full items-center justify-center text-white text-[9px] border-2 border-white shadow-sm"><i class="fa-solid fa-check"></i></div>
+                 <div class="w-7 h-7 rounded-full bg-slate-900 shadow-md group-hover:scale-110 transition-transform"></div>
+               </div>
+               <span class="text-xs font-bold text-slate-700">极夜黑</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-3 cursor-pointer group" onclick="setThemeColor('emerald')">
+               <div id="theme-circle-emerald" class="theme-circle w-14 h-14 rounded-2xl bg-transparent border-2 border-transparent flex items-center justify-center relative transition-all duration-300 hover:bg-emerald-50">
+                 <div class="theme-check hidden absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 w-4 h-4 bg-accent-500 rounded-full items-center justify-center text-white text-[9px] border-2 border-white shadow-sm"><i class="fa-solid fa-check"></i></div>
+                 <div class="w-7 h-7 rounded-full bg-emerald-500 shadow-md group-hover:scale-110 transition-transform"></div>
+               </div>
+               <span class="text-xs font-bold text-slate-700">薄荷绿</span>
+            </div>
+            
+            <div class="flex flex-col items-center gap-3 cursor-pointer group" onclick="setThemeColor('amber')">
+               <div id="theme-circle-amber" class="theme-circle w-14 h-14 rounded-2xl bg-transparent border-2 border-transparent flex items-center justify-center relative transition-all duration-300 hover:bg-amber-50">
+                 <div class="theme-check hidden absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 w-4 h-4 bg-accent-500 rounded-full items-center justify-center text-white text-[9px] border-2 border-white shadow-sm"><i class="fa-solid fa-check"></i></div>
+                 <div class="w-7 h-7 rounded-full bg-amber-500 shadow-md group-hover:scale-110 transition-transform"></div>
+               </div>
+               <span class="text-xs font-bold text-slate-700">事务金</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-3 cursor-pointer group" onclick="setThemeColor('rose')">
+               <div id="theme-circle-rose" class="theme-circle w-14 h-14 rounded-2xl bg-transparent border-2 border-transparent flex items-center justify-center relative transition-all duration-300 hover:bg-rose-50">
+                 <div class="theme-check hidden absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 w-4 h-4 bg-accent-500 rounded-full items-center justify-center text-white text-[9px] border-2 border-white shadow-sm"><i class="fa-solid fa-check"></i></div>
+                 <div class="w-7 h-7 rounded-full bg-rose-500 shadow-md group-hover:scale-110 transition-transform"></div>
+               </div>
+               <span class="text-xs font-bold text-slate-700">玫瑰粉</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-3 cursor-pointer group" onclick="setThemeColor('violet')">
+               <div id="theme-circle-violet" class="theme-circle w-14 h-14 rounded-2xl bg-transparent border-2 border-transparent flex items-center justify-center relative transition-all duration-300 hover:bg-violet-50">
+                 <div class="theme-check hidden absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 w-4 h-4 bg-accent-500 rounded-full items-center justify-center text-white text-[9px] border-2 border-white shadow-sm"><i class="fa-solid fa-check"></i></div>
+                 <div class="w-7 h-7 rounded-full bg-violet-600 shadow-md group-hover:scale-110 transition-transform"></div>
+               </div>
+               <span class="text-xs font-bold text-slate-700">深空紫</span>
+            </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Global Error/Info Modal -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+      <div id="modal-box" class="bg-white border border-slate-200 shadow-2xl rounded-2xl w-full max-w-md p-6 transform scale-95 transition-transform duration-300">
+        <h3 id="modal-title" class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center text-sm"><i class="fa-solid fa-circle-exclamation"></i></div> 系统提醒
+        </h3>
+        <div id="modal-msg" class="text-slate-600 text-[13px] mb-6 leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto hidden-scrollbar select-text bg-slate-50 p-4 rounded-xl border border-slate-100 font-medium">
+          请稍候...
+        </div>
+        <div class="flex justify-end gap-3 font-semibold text-xs">
+          <button id="modal-btn-cancel" class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+            取消
+          </button>
+          <button id="modal-btn-ok" class="px-5 py-2.5 rounded-lg bg-accent-600 text-white hover:bg-accent-700 shadow-md shadow-accent-500/20 transition-all cursor-pointer">
+            确认
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- UI Scripts -->
+    <script>
+      // Theme Modal Toggle Logic
+      const themeBtn = document.getElementById('btn-open-theme');
+      const themeBackdrop = document.getElementById('theme-modal-backdrop');
+      const themeBox = document.getElementById('theme-modal-box');
+      const themeClose = document.getElementById('theme-modal-close');
+
+      const openTheme = () => {
+          themeBackdrop.classList.remove('opacity-0', 'pointer-events-none');
+          themeBox.classList.remove('scale-95');
+          themeBox.classList.add('scale-100');
+      };
+      
+      const closeTheme = () => {
+          themeBackdrop.classList.add('opacity-0', 'pointer-events-none');
+          themeBox.classList.remove('scale-100');
+          themeBox.classList.add('scale-95');
+      };
+
+      themeBtn.addEventListener('click', openTheme);
+      themeClose.addEventListener('click', closeTheme);
+      themeBackdrop.addEventListener('click', (e) => {
+          if(e.target === themeBackdrop) closeTheme();
+      });
+    </script>
+    <script src="script.js"></script>
+  </body>
+</html>
