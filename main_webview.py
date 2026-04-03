@@ -476,57 +476,60 @@ class Api:
                             else:
                                 self.log("  [错误] 检测不到输入核心区域！", "text-red-500")
                                 
-                            # Publish
+                                # Publish
                             self.log(" -> 发射程序部署完毕，开始点击极光确认按钮...")
                             next_btn = editor_page.get_by_text("下一步", exact=True).last
                             if next_btn.is_visible():
                                 next_btn.click(force=True)
+                                editor_page.wait_for_timeout(2000)
                                 
-                                try:
-                                    # 处理因错别字未修改等弹出的“发布提示”弹窗，点击“提交”
-                                    submit_btn_candidates = [
-                                        editor_page.get_by_role("button", name="提交"),
-                                        editor_page.get_by_text("提交", exact=True)
-                                    ]
-                                    for cand in submit_btn_candidates:
-                                        try:
-                                            btn = cand.last
-                                            btn.wait_for(state="visible", timeout=1500)
-                                            if btn.is_visible():
-                                                btn.click(force=True)
-                                                self.log(" -> 已自动跳过错别字等提示，点击了【提交】", "text-gray-400")
-                                                editor_page.wait_for_timeout(1200)
-                                                break
-                                        except: pass
-                                except: pass
-                                    
-                                try:
-                                    risk_txt = editor_page.get_by_text("内容风险检测", exact=False).last
-                                    risk_txt.wait_for(state="visible", timeout=2000)
-                                    editor_page.wait_for_timeout(500)
-                                    cancel_risk_btn = editor_page.get_by_role("button", name="取消").last
-                                    cancel_risk_btn.wait_for(state="visible", timeout=2000)
-                                    cancel_risk_btn.click(force=True)
-                                    editor_page.wait_for_timeout(1000)
-                                except: pass
-                                    
-                                try:
-                                    publish_btn = editor_page.get_by_role("button", name="确认发布").first
-                                    publish_btn.wait_for(state="visible", timeout=6000)
-                                    
+                                publish_success = False
+                                for attempt in range(15):  # 尝试总时长大约15秒
+                                    # 尝试点击AI选项
                                     try:
                                         ai_no_label = editor_page.get_by_text("否", exact=True).first
-                                        ai_no_label.wait_for(state="visible", timeout=2000)
-                                        ai_no_label.click(force=True)
-                                        editor_page.wait_for_timeout(500)
+                                        if ai_no_label.is_visible():
+                                            ai_no_label.click(force=True)
                                     except: pass
                                     
-                                    publish_btn.click(force=True)
-                                    self.log(f"  [🎇 完美收官] '第{chapter_num}章 {chapter_title}' 已被发送往星辰大海！", "text-green-400 font-bold")
-                                    success_count += 1
-                                    self._update_progress(success_count, total_target)
+                                    # 尝试点击最终确认发布
+                                    try:
+                                        publish_btn = editor_page.get_by_role("button", name="确认发布").first
+                                        if not publish_btn.is_visible():
+                                            publish_btn = editor_page.get_by_text("确认发布", exact=True).first
+                                            
+                                        if publish_btn.is_visible() and publish_btn.is_enabled():
+                                            publish_btn.click(force=True)
+                                            self.log(f"  [🎇 完美收官] '第{chapter_num}章 {chapter_title}' 已被发送往星辰大海！", "text-green-400 font-bold")
+                                            publish_success = True
+                                            success_count += 1
+                                            self._update_progress(success_count, total_target)
+                                            break
+                                    except: pass
                                     
-                                except Exception as e:
+                                    # 尝试处理拦截弹窗 (由于AI提示、错别字、敏感词等风险提示)
+                                    handled_popup = False
+                                    for popup_btn_text in ["提交", "继续发布", "我知道了", "确认", "确定"]:
+                                        try:
+                                            # 使用 get_by_role 优先匹配真正的按钮
+                                            p_btn = editor_page.get_by_role("button", name=popup_btn_text).last
+                                            if not p_btn.is_visible():
+                                                p_btn = editor_page.get_by_text(popup_btn_text, exact=True).last
+                                                
+                                            if p_btn.is_visible() and p_btn.is_enabled():
+                                                p_btn.click(force=True)
+                                                self.log(f" -> 已自动点击弹窗的【{popup_btn_text}】继续推进", "text-gray-400")
+                                                editor_page.wait_for_timeout(1000)
+                                                handled_popup = True
+                                                break
+                                        except: pass
+                                        
+                                    if handled_popup:
+                                        continue  # 刚点击了弹窗，立刻进行下一轮检查
+                                        
+                                    editor_page.wait_for_timeout(1000)
+                                    
+                                if not publish_success:
                                     self.log(f"  [系统宕机] 找不到确认发布极光按钮！请求干预！", "text-red-500 font-bold")
                                     result = self.window.create_confirmation_dialog('需要人工辅助', f'未匹配到最后一步的“确认发布”！\n\n请在浏览器中手动点击确认发布完毕后，点击【确定】继续。')
                                     if result:
