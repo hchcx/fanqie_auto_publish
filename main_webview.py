@@ -521,6 +521,23 @@ class Api:
                                 next_btn.click(force=True)
                                 editor_page.wait_for_timeout(2000)
                                 
+                                # 新增：内容检测方式选择弹窗（平台新逻辑）
+                                try:
+                                    detection_modal = editor_page.get_by_text("请选择内容检测方式", exact=False).first
+                                    detection_modal.wait_for(state="visible", timeout=2000)
+                                    self.log(" -> 触发内容检测方式弹窗，选择【全面检测】...", "text-gray-400")
+                                    # 优先使用 Playwright CSS 文本关联选择器（不依赖 div 层级，最稳）
+                                    full_btn = editor_page.locator('button:has-text("全面检测")').first
+                                    if not full_btn.is_visible():
+                                        full_btn = editor_page.get_by_role("button", name="全面检测").first
+                                    if not full_btn.is_visible():
+                                        full_btn = editor_page.get_by_text("全面检测", exact=True).first
+                                    if full_btn.is_visible():
+                                        full_btn.click(force=True)
+                                        editor_page.wait_for_timeout(2500)
+                                except Exception:
+                                    pass
+                                
                                 publish_success = False
                                 for attempt in range(15):  # 尝试总时长大约15秒
                                     # 尝试点击AI选项
@@ -547,12 +564,20 @@ class Api:
                                     
                                     # 尝试处理拦截弹窗 (由于AI提示、错别字、敏感词等风险提示)
                                     handled_popup = False
-                                    for popup_btn_text in ["提交", "继续发布", "我知道了", "确认", "确定"]:
+                                    for popup_btn_text in ["提交", "继续发布", "我知道了", "确认", "确定", "全面检测"]:
                                         try:
-                                            # 使用 get_by_role 优先匹配真正的按钮
-                                            p_btn = editor_page.get_by_role("button", name=popup_btn_text).last
-                                            if not p_btn.is_visible():
-                                                p_btn = editor_page.get_by_text(popup_btn_text, exact=True).last
+                                            # 针对"全面检测"优先使用 CSS 文本关联选择器
+                                            if popup_btn_text == "全面检测":
+                                                p_btn = editor_page.locator('button:has-text("全面检测")').first
+                                                if not p_btn.is_visible():
+                                                    p_btn = editor_page.get_by_role("button", name=popup_btn_text).last
+                                                if not p_btn.is_visible():
+                                                    p_btn = editor_page.get_by_text(popup_btn_text, exact=True).last
+                                            else:
+                                                # 使用 get_by_role 优先匹配真正的按钮
+                                                p_btn = editor_page.get_by_role("button", name=popup_btn_text).last
+                                                if not p_btn.is_visible():
+                                                    p_btn = editor_page.get_by_text(popup_btn_text, exact=True).last
                                                 
                                             if p_btn.is_visible() and p_btn.is_enabled():
                                                 p_btn.click(force=True)
@@ -563,6 +588,9 @@ class Api:
                                         except: pass
                                         
                                     if handled_popup:
+                                        # 若刚点击的是全面检测，多等几秒让平台跑完检测
+                                        if popup_btn_text == "全面检测":
+                                            editor_page.wait_for_timeout(4000)
                                         continue  # 刚点击了弹窗，立刻进行下一轮检查
                                         
                                     editor_page.wait_for_timeout(1000)

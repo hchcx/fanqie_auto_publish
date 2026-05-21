@@ -450,6 +450,23 @@ def main():
                     except Exception:
                         pass
                         
+                    # 闯关拦截 1.5：内容检测方式选择弹窗（新增） -> 选择全面检测
+                    try:
+                        detection_modal = editor_page.get_by_text("请选择内容检测方式", exact=False).first
+                        detection_modal.wait_for(state="visible", timeout=2000)
+                        print("    - 触发内容检测方式选择弹窗，点击【全面检测】...")
+                        # 优先使用 Playwright CSS 文本关联选择器（不依赖 div 层级，最稳）
+                        full_btn = editor_page.locator('button:has-text("全面检测")').first
+                        if not full_btn.is_visible():
+                            full_btn = editor_page.get_by_role("button", name="全面检测").first
+                        if not full_btn.is_visible():
+                            full_btn = editor_page.get_by_text("全面检测", exact=True).first
+                        if full_btn.is_visible():
+                            full_btn.click(force=True)
+                            editor_page.wait_for_timeout(2500)
+                    except Exception:
+                        pass
+
                     try:
                         # 闯关拦截 2：内容风险检测弹窗 -> 必须秒破
                         # 严格先探明存在此风险询问文案
